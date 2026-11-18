@@ -3,13 +3,14 @@ from typing import Annotated
 from core.settings import Settings
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from modules.benchmarks.repos.benchmark_repo import BenchmarkRepository
 from modules.agents.repos.agent_repo import AgentRepository
 from modules.auth.models.auth_user_model import AuthenticatedUser
 from modules.auth.models.error_model import InvalidAccessTokenError
 from modules.auth.services.auth_service import AuthenticationService
 from modules.auth.services.rate_limit_service import AuthRateLimiter
+from modules.benchmarks.repos.benchmark_repo import BenchmarkRepository
 from modules.evaluations.repos.evaluation_repo import EvaluationRepository
+from modules.evaluations.repos.run_metrics_repo import RunMetricsRepository
 from modules.executions.repos.execution_repo import ExecutionRepository
 from modules.mcp_servers.services.server_service import ServerService
 from modules.projects.services.project_service import ProjectService
@@ -112,3 +113,10 @@ def benchmarks(request: Request) -> BenchmarkRepository:
 
 
 Benchmarks = Annotated[BenchmarkRepository, Depends(benchmarks)]
+
+
+def run_metrics(request: Request) -> RunMetricsRepository:
+    return request.app.state.run_metrics
+
+
+RunMetrics = Annotated[RunMetricsRepository, Depends(run_metrics)]

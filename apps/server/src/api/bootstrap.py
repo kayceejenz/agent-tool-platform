@@ -16,6 +16,7 @@ from modules.auth.services.auth_service import AuthenticationService
 from modules.auth.services.rate_limit_service import AuthRateLimiter
 from modules.benchmarks.repos.benchmark_repo import BenchmarkRepository
 from modules.evaluations.repos.evaluation_repo import EvaluationRepository
+from modules.evaluations.repos.run_metrics_repo import RunMetricsRepository
 from modules.executions.repos.execution_repo import ExecutionRepository
 from modules.mcp_servers.repos.server_repo import ServerRepository
 from modules.mcp_servers.services.server_service import ServerService
@@ -74,6 +75,7 @@ async def configure_dependencies(instance: FastAPI, config: Settings) -> Databas
     instance.state.evaluations = EvaluationRepository(
         database, configured_secrets(config)
     )
+    instance.state.run_metrics = RunMetricsRepository(database)
     instance.state.prompts = PromptRepository(database)
     instance.state.database = database
     instance.state.projects = ProjectService(ProjectRepository(database))

@@ -17,6 +17,7 @@ class StartExecution(BaseModel):
     analysis: AnalysisRequest | None = None
     benchmark_id: UUID | None = None
     expectations: Expectations | None = None
+    llm_evaluation: bool = Field(default=True, strict=True)
     input: str = Field(min_length=1, max_length=16000)
 
     @field_validator("input")

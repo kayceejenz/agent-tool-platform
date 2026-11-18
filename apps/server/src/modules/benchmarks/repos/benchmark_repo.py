@@ -149,7 +149,11 @@ class BenchmarkRepository:
                 )
             ).fetchone()
             row["input_schema"] = (
-                definition["definition"].get("inputSchema", {}) if definition else {}
+                definition["definition"].get(
+                    "input_schema", definition["definition"].get("inputSchema", {})
+                )
+                if definition
+                else {}
             )
             row["score"] = score_call(row, row["calls"])
 
@@ -223,7 +227,7 @@ class BenchmarkRepository:
                     await db.execute(
                         """SELECT e.benchmark_id,e.status,e.agent_id,
                        e.snapshot->>'name' AS agent_name,
-                       b.tool_id,b.arguments,r.definition->'inputSchema' AS input_schema,
+                       b.tool_id,b.arguments,COALESCE(r.definition->'input_schema',r.definition->'inputSchema') AS input_schema,
                        CASE WHEN e.started_at IS NOT NULL AND e.finished_at IS NOT NULL
                             THEN greatest(0,extract(epoch FROM e.finished_at-e.started_at)*1000)::double precision
                        END AS latency_ms,

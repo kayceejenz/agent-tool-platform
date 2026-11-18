@@ -1,15 +1,16 @@
 import asyncio
 from pathlib import Path
-from urllib.parse import quote
 from typing import Annotated, Literal
+from urllib.parse import quote
 from uuid import UUID
 
-from api.dependencies import Agents, Config, Executions, User
+from api.dependencies import Agents, Config, Executions, RunMetrics, User
 from fastapi import APIRouter, Query, Response
-from integrations.sandbox.artifacts import ArtifactStorage
 from integrations.agents.model_provider import SUPPORTED_PROVIDERS, provider_key
+from integrations.sandbox.artifacts import ArtifactStorage
 
 from modules.agents.models.error_model import AgentError
+from modules.evaluations.dtos.run_metrics_dto import SaveExpectedSteps
 from modules.executions.dtos.execution_dto import StartExecution
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["executions"])
@@ -155,3 +156,21 @@ async def artifact_download(
             "Content-Security-Policy": "default-src 'none'; sandbox",
         },
     )
+
+
+@router.get("/executions/{execution_id}/metrics")
+async def metrics(
+    project_id: UUID, execution_id: UUID, user: User, metrics: RunMetrics
+):
+    return await metrics.get(user.id, project_id, execution_id)
+
+
+@router.post("/executions/{execution_id}/metrics")
+async def save_metrics(
+    project_id: UUID,
+    execution_id: UUID,
+    body: SaveExpectedSteps,
+    user: User,
+    metrics: RunMetrics,
+):
+    return await metrics.save(user.id, project_id, execution_id, body)

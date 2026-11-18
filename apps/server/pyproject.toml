@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agent-platform-server"
 version = "0.1.0"
-description = "API for the Agent Tool Experiment Platform."
+description = "API for the Agent Tool Platform."
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1.0",

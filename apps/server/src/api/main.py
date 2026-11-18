@@ -56,7 +56,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await database.close()
 
     instance = FastAPI(
-        title="Agent Tool Experiment Platform", version="0.1.0", lifespan=lifespan
+        title="Agent Tool Platform", version="0.1.0", lifespan=lifespan
     )
 
     config = settings if settings is not None else Settings()

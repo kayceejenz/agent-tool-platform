@@ -36,6 +36,8 @@ class ExecutionRepository:
             if expectations is None
             else json.dumps([body.input, expectations], sort_keys=True)
         )
+        if not body.llm_evaluation:
+            digest_input = json.dumps([digest_input, False])
         if body.benchmark_id:
             digest_input = json.dumps([digest_input, str(body.benchmark_id)])
         if body.analysis:
@@ -126,7 +128,7 @@ class ExecutionRepository:
                     }
                     detail["builtin_tools"] = tool_definitions()
                 snapshot = execution_snapshot(detail, expectations, self.secret)
-                if body.analysis:
+                if body.analysis or not body.llm_evaluation:
                     snapshot["evaluation_profile"]["enabled"] = False
                 if body.benchmark_id:
                     snapshot["evaluation_profile"]["enabled"] = False

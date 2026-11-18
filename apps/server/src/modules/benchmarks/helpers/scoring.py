@@ -1,4 +1,4 @@
-"""Tool-use metrics for a reference with exactly one expected call."""
+"""Tool-use metrics shared by benchmarks and human-defined expected steps."""
 
 
 def same_json(expected, actual):
@@ -118,3 +118,75 @@ def model_performance(runs):
             row["agent_id"],
         ),
     )
+
+
+def _maximum_argument_agreement(matrix):
+    """Maximum-weight one-to-one matching (Hungarian assignment, O(n²m))."""
+    if not matrix or not matrix[0]:
+        return 0
+    if len(matrix) > len(matrix[0]):
+        matrix = [list(column) for column in zip(*matrix)]
+    n, m = len(matrix), len(matrix[0])
+    u, v, matched, previous = (
+        [0.0] * (n + 1),
+        [0.0] * (m + 1),
+        [0] * (m + 1),
+        [0] * (m + 1),
+    )
+    for row in range(1, n + 1):
+        matched[0], column = row, 0
+        costs, used = [float("inf")] * (m + 1), [False] * (m + 1)
+        while True:
+            used[column] = True
+            current_row, delta, next_column = matched[column], float("inf"), 0
+            for j in range(1, m + 1):
+                if not used[j]:
+                    cost = -matrix[current_row - 1][j - 1] - u[current_row] - v[j]
+                    if cost < costs[j]:
+                        costs[j], previous[j] = cost, column
+                    if costs[j] < delta:
+                        delta, next_column = costs[j], j
+            for j in range(m + 1):
+                if used[j]:
+                    u[matched[j]] += delta
+                    v[j] -= delta
+                else:
+                    costs[j] -= delta
+            column = next_column
+            if matched[column] == 0:
+                break
+        while column:
+            next_column = previous[column]
+            matched[column] = matched[next_column]
+            column = next_column
+    return sum(matrix[matched[j] - 1][j - 1] for j in range(1, m + 1) if matched[j])
+
+
+def score_steps(expected, calls):
+    """Pair calls to the same tool once, maximizing argument agreement."""
+    matched, agreement = 0, 0.0
+    for key in {step["tool_key"] for step in expected}:
+        references = [step for step in expected if step["tool_key"] == key]
+        actual = [call for call in calls if call["tool_key"] == key]
+        matched += min(len(references), len(actual))
+        agreement += _maximum_argument_agreement(
+            [
+                [
+                    argument_score(
+                        step["arguments"],
+                        call["inputs"],
+                        step.get("input_schema") or {},
+                    )["accuracy"]
+                    for call in actual
+                ]
+                for step in references
+            ]
+        )
+    return {
+        "precision": percentage(matched, len(calls)),
+        "recall": percentage(matched, len(expected)),
+        "argument_accuracy": agreement / matched if matched else None,
+        "expected_calls": len(expected),
+        "actual_calls": len(calls),
+        "matched_calls": matched,
+    }
