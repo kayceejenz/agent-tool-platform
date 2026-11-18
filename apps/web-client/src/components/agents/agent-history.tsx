@@ -1,5 +1,6 @@
 'use client';
 import { configOf, type Agent, type AgentSummary } from '@/types/agent';
+import { visibleConfiguration } from '@/lib/agents/visible-configuration';
 import { useRevisionHistory } from '@/hooks/use-revision-history';
 
 export function AgentHistory({ base }: { base: string }) {
@@ -74,7 +75,7 @@ export function AgentHistory({ base }: { base: string }) {
 					<h3>Revision {preview.revision}</h3>
 					<pre>
 						{JSON.stringify(
-							configOf(preview),
+							visibleConfiguration(configOf(preview)),
 							null,
 							2,
 						)}

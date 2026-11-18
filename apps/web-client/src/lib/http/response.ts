@@ -184,6 +184,21 @@ export function assertProjectPayload(
 			return invalid();
 		return;
 	}
+    if (/\/executions\/[^/]+\/metrics$/.test(route)) {
+        const count = (n: unknown) => Number.isSafeInteger(n) && Number(n) >= 0;
+        const percentage = (n: unknown) => n === null || (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100);
+        const tool = (entry: unknown) => isRecord(entry) && text(entry.tool_key) && text(entry.name) && isRecord(entry.input_schema);
+        if (!['pending', 'scored', 'needs_reference'].includes(String(value.state)) ||
+            !['question', 'benchmark'].includes(String(value.source)) ||
+            !Array.isArray(value.tools) || !value.tools.every(tool) ||
+            !(value.expected_steps === null || (Array.isArray(value.expected_steps) && value.expected_steps.every(step => tool(step) && isRecord(step) && isRecord(step.arguments)))) ||
+            !(value.latency_ms === null || (typeof value.latency_ms === 'number' && Number.isFinite(value.latency_ms) && value.latency_ms >= 0)) ||
+            !(value.metrics === null || (isRecord(value.metrics) &&
+                ['precision', 'recall', 'argument_accuracy'].every(key => percentage((value.metrics as Record<string, unknown>)[key])) &&
+                ['actual_calls', 'expected_calls', 'matched_calls'].every(key => count((value.metrics as Record<string, unknown>)[key]))))
+        ) return invalid();
+        return;
+    }
 	const catalog =
 		/\/(tools|prompts|spans|evaluations)$/.test(route) &&
 		method === 'GET';

@@ -144,6 +144,7 @@ export function useAgentPlayground({
 				'POST',
 				{
 					input,
+					llm_evaluation: false,
 					revision: agent.revision,
 					request_id: id,
 					...(datasetId ? { analysis: { dataset_id: datasetId } } : {}),

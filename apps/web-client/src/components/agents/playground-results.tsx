@@ -2,7 +2,7 @@
 import type { useAgentPlayground } from './use-agent-playground';
 import { ReadableText } from '@/components/content/readable-text';
 import { Check, Copy } from 'lucide-react';
-import { ExecutionEvaluation } from './execution-evaluation';
+import { RunMetrics } from './run-metrics';
 import { ExecutionTrace } from './execution-trace';
 import { ExecutionArtifacts } from './execution-artifacts';
 
@@ -166,19 +166,8 @@ export function PlaygroundResults({
 					path={`${base}/executions/${run.id}`}
 				/>
 			)}
-			{!pending && !run.analysis_dataset_id && (
-				<p className='execution-quality-note'>
-					Execution status describes whether the run finished. Evaluation
-					assesses the quality of its answer and tool use.
-				</p>
-			)}
-			{!pending && !run.analysis_dataset_id && (
-				<ExecutionEvaluation
-					key={run.id}
-					path={`${base}/executions/${run.id}`}
-					canEvaluate={canRun}
-				/>
-			)}
+
+            {!pending && <RunMetrics key={run.id} path={`${base}/executions/${run.id}`} canEdit={canRun} />}
 			<details
 				className='playground-details'
 				open={showDetails}

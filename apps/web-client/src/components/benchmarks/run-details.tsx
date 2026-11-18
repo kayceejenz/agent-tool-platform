@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Info } from 'lucide-react';
+import { MetricInfo } from '@/components/content/metric-info';
 import { StructuredPayload } from '@/components/content/structured-payload';
 import { ReadableText } from '@/components/content/readable-text';
 import { ExecutionTrace } from '@/components/agents/execution-trace';
@@ -262,53 +262,5 @@ function BenchmarkRunDetails({
 				/>
 			)}
 		</section>
-	);
-}
-
-function MetricInfo({
-	label,
-	explanation,
-}: {
-	label: string;
-	explanation: string;
-}) {
-	const id = useId();
-	const [open, setOpen] = useState(false);
-	return (
-		<span
-			className='metric-info'
-			onMouseEnter={() => setOpen(true)}
-			onMouseLeave={event =>
-				setOpen(
-					event.currentTarget.contains(
-						document.activeElement,
-					),
-				)
-			}>
-			<button
-				type='button'
-				className='metric-info-button'
-				aria-label={`About ${label.toLowerCase()}`}
-				aria-describedby={open ? id : undefined}
-				onFocus={() => setOpen(true)}
-				onBlur={() => setOpen(false)}
-				onClick={() => setOpen(true)}
-				onKeyDown={event => {
-					if (event.key === 'Escape') {
-						setOpen(false);
-						event.stopPropagation();
-					}
-				}}>
-				<Info size={16} aria-hidden='true' />
-			</button>
-			{open && (
-				<span
-					id={id}
-					role='tooltip'
-					className='metric-info-tooltip'>
-					{explanation}
-				</span>
-			)}
-		</span>
 	);
 }

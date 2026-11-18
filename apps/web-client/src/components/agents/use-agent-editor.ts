@@ -20,7 +20,6 @@ export const tabs = [
 	'Model',
 	'Tools',
 	'Limits',
-	'Evaluation',
 	'History',
 ] as const;
 

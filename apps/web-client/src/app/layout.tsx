@@ -9,7 +9,7 @@ import { themeScript } from '@/lib/theme';
 import './globals.css';
 
 export const metadata: Metadata = {
-	title: 'Agent Tool Experiment Platform',
+	title: 'Agent Tool Platform',
 	description:
 		'Connect tools, evaluate agents, and inspect their behavior.',
 };

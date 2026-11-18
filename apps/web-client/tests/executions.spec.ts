@@ -168,6 +168,10 @@ test('inspect tool lineage, context links, saved snapshots and execution history
 		async route => {
 			if (route.request().method() === 'POST') {
 				expect(
+					route.request().postDataJSON()
+						.llm_evaluation,
+				).toBe(false);
+				expect(
 					route.request().postDataJSON().input,
 				).toBe('Find price');
 				await route.fulfill({
@@ -186,6 +190,24 @@ test('inspect tool lineage, context links, saved snapshots and execution history
 	await page.route(`**${base}/executions/${runId}**`, route => {
 		const path = new URL(route.request().url()).pathname;
 		const { snapshot, spans, ...overview } = run;
+		if (path.endsWith('/metrics'))
+			return route.fulfill({
+				json: {
+					state: 'scored',
+					source: 'benchmark',
+					tools: [],
+					expected_steps: [],
+					latency_ms: 1200,
+					metrics: {
+						precision: 100,
+						recall: 100,
+						argument_accuracy: 75,
+						expected_calls: 1,
+						actual_calls: 1,
+						matched_calls: 1,
+					},
+				},
+			});
 		if (path.endsWith('/evaluations'))
 			return route.fulfill({
 				json: {
@@ -279,30 +301,12 @@ test('inspect tool lineage, context links, saved snapshots and execution history
 	);
 	await expect(page).toHaveURL(new RegExp(`execution=${runId}`));
 	await expect(
-		dialog.locator('.evaluation-outcome-summary'),
-	).toContainText('Passed');
-	await dialog.locator('.evaluation-panel > summary').click();
-	await expect(dialog.locator('.evaluation-panel')).toContainText(
-		'Task outcomeCompleted',
-	);
-	await expect(dialog.locator('.evaluation-panel')).toContainText(
-		'fixture-judge',
-	);
-	for (const section of await dialog.locator('.evaluation-section').all())
-		await section.locator(':scope > summary').click();
-	await dialog
-		.locator('.evaluation-finding')
-		.first()
-		.locator(':scope > summary')
-		.click();
-	await dialog
-		.locator('.evaluation-evidence')
-		.first()
-		.locator(':scope > summary')
-		.click();
+		dialog.getByRole('region', { name: 'Run evaluation' }),
+	).toContainText('75.0%');
+	await expect(dialog.locator('.evaluation-panel')).toHaveCount(0);
 	await expect(
-		dialog.locator('.evaluation-evidence pre').last(),
-	).toContainText('GBP');
+		dialog.getByRole('button', { name: /Evaluate|Run evaluation/ }),
+	).toHaveCount(0);
 	await expect(dialog.locator('.execution-span')).toHaveCount(0);
 	await expect(
 		dialog.getByRole('button', { name: 'Copy answer' }),

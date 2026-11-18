@@ -593,17 +593,12 @@
 .usage-trends {
 	margin-top: 12px;
 }
-.usage-trends > summary,
-.project-activity > summary {
+.usage-trends > summary {
 	cursor: pointer;
 	padding: 12px 0;
 	min-height: 44px;
 	color: var(--muted);
 	font-size: 14px;
-}
-.project-activity > .panel,
-.project-activity > .metric-grid {
-	margin-top: 20px;
 }
 
 .usage-chart-interactive {

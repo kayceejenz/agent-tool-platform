@@ -6,7 +6,6 @@ import { type AgentSummary } from '@/types/agent';
 import { AgentHistory } from './agent-history';
 import { useAgentEditor, tabs } from '@/components/agents/use-agent-editor';
 import { AgentDetailsFields } from './agent-details-fields';
-import { AgentEvaluationFields } from './agent-evaluation-fields';
 import { AgentPromptsFields } from './agent-prompts-fields';
 import { AgentModelFields } from './agent-model-fields';
 import { AgentToolsFields } from './agent-tools-fields';
@@ -38,8 +37,6 @@ export function AgentEditor({
 		setSystem,
 		agentPrompt,
 		setAgentPrompt,
-		evaluationPrompt,
-		setEvaluationPrompt,
 		tools,
 		setTools,
 		tab,
@@ -218,22 +215,6 @@ export function AgentEditor({
 									form={form}
 									disabled={disabled}
 									field={field}
-								/>
-							</details>
-						)}
-						{(!managing || tab === 'Evaluation') && (
-							<details
-								className='advanced-settings'
-								open={managing || undefined}>
-								<summary>Evaluation settings</summary>
-								<AgentEvaluationFields
-									form={form}
-									field={field}
-									evaluationPrompt={evaluationPrompt}
-									setEvaluationPrompt={setEvaluationPrompt}
-									setPickerBusy={setPickerBusy}
-									disabled={disabled}
-									projectId={projectId}
 								/>
 							</details>
 						)}

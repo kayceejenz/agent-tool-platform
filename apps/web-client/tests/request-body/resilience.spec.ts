@@ -35,6 +35,7 @@ const backend = createServer((request, response) => {
 	if (path.endsWith('/prompts')) return send({ items: [], next_offset: 20 });
 	if (path.endsWith('/spans')) return send({ items: [span], next_offset: null });
 	if (path.endsWith(`/spans/${spanId}`)) return send({ ...span, inputs: { task: 'A large input' }, outputs: { text: 'Payload loaded on demand' } });
+    if (path.endsWith('/metrics')) return send({ state: 'needs_reference', source: 'question', tools: [], expected_steps: null, latency_ms: 0, metrics: null });
 	if (path.endsWith('/evaluations')) return send({ items: [], next_offset: null });
 	if (path.endsWith('/snapshot')) return send({ snapshot: { model_settings: agent.model_settings } });
 	if (path.includes('/executions/requests/')) {

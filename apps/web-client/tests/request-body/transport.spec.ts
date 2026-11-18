@@ -1,3 +1,4 @@
+import { visibleConfiguration } from '../../src/lib/agents/visible-configuration';
 import { test, expect } from '@playwright/test';
 import {
 	projectRequest,
@@ -187,4 +188,23 @@ test('direct uploads allow only the configured API origin in connect-src', () =>
 			'http://127.0.0.1:8001',
 		),
 	).toContain('http://127.0.0.1:8001');
+});
+
+
+test('run metrics validate nullable scores and reject malformed provider-free reports', () => {
+    const path = '/project/executions/run/metrics';
+    const base = { state: 'needs_reference', source: 'question', tools: [], expected_steps: null, latency_ms: 0, metrics: null };
+    expect(() => assertProjectPayload(path, base)).not.toThrow();
+    const scored = { ...base, state: 'scored', metrics: { precision: 66.7, recall: 100, argument_accuracy: 50, actual_calls: 3, expected_calls: 2, matched_calls: 2 } };
+    expect(() => assertProjectPayload(path, scored)).not.toThrow();
+    expect(() => assertProjectPayload(path, { ...scored, metrics: { ...scored.metrics, recall: 101 } })).toThrow();
+    expect(() => assertProjectPayload(path, { items: [] })).toThrow();
+});
+
+
+test('judge settings stay out of visible configuration without modifying source data or schemas', () => {
+    const source = { model: 'fixture', evaluation_profile: { enabled: true }, expectations: { required_tools: [] }, tools: [{ input_schema: { properties: { evaluation_profile: { type: 'string' } } } }] };
+    const visible = visibleConfiguration(source);
+    expect(visible).toEqual({ model: source.model, tools: source.tools });
+    expect(source.evaluation_profile.enabled).toBe(true);
 });

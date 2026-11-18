@@ -4,6 +4,7 @@ import { StructuredPayload } from '@/components/content/structured-payload';
 import { useEffect, useMemo, useState } from 'react';
 import { usePagedCatalog } from '@/hooks/use-paged-catalog';
 import { projectRequest } from '@/lib/projects/client';
+import { visibleConfiguration } from '@/lib/agents/visible-configuration';
 import { isCancelled } from '@/lib/http/response';
 import type { ExecutionSpan, SpanSummary } from '@/types/execution';
 
@@ -325,7 +326,7 @@ function Snapshot({ path }: { path: string }) {
 				) : snapshot ? (
 					<pre>
 						{JSON.stringify(
-							snapshot,
+							visibleConfiguration(snapshot),
 							null,
 							2,
 						)}
