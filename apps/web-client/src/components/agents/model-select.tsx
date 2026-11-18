@@ -62,7 +62,6 @@ export function ModelSelect({
 						'openai',
 						'google',
 						'anthropic',
-						'ollama',
 					] as const
 				).map(
 					group =>
@@ -106,13 +105,7 @@ export function ModelSelect({
 			{selected && (
 				<small>
 					{selected.performance}.{' '}
-					{selected.provider === 'ollama'
-						? 'Pull this exact model in Ollama before running it. Local inference has no per-token API fee; hardware costs still apply.'
-						: selected.input !== null &&
-							  selected.output !==
-									null
-							? `Standard text pricing: $${selected.input.toFixed(2)} input / $${selected.output.toFixed(2)} output per 1M tokens. `
-							: 'Check current rates with the provider. '}
+					{`Standard text pricing: $${selected.input.toFixed(2)} input / $${selected.output.toFixed(2)} output per 1M tokens. `}
 					{selected.id === 'gemini-2.5-pro' &&
 						' For prompts up to 200k tokens; longer prompts cost more. '}
 					{selected.id === 'claude-haiku-5-5' &&
@@ -126,9 +119,7 @@ export function ModelSelect({
 						}
 						target='_blank'
 						rel='noreferrer'>
-						{selected.provider === 'ollama'
-							? 'Model details'
-							: 'Provider pricing'}
+						Provider pricing
 					</a>
 				</small>
 			)}

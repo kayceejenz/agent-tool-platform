@@ -2,7 +2,6 @@ export const providerLabels = {
 	openai: 'OpenAI',
 	google: 'Google Gemini',
 	anthropic: 'Claude',
-	ollama: 'Ollama (local)',
 };
 export const modelCatalog = [
     {
@@ -15,15 +14,6 @@ export const modelCatalog = [
         tier: 'Balanced', performance: 'Tool use · introductory pricing through December 2026',
         input: 0.75, output: 3.75,
     },
-	{
-		id: 'gpt-4.1-nano',
-		provider: 'openai',
-		name: 'GPT-4.1 nano',
-		tier: 'Budget',
-		performance: 'Fast · small-model baseline',
-		input: 0.1,
-		output: 0.4,
-	},
 	{
 		id: 'claude-haiku-5-5',
 		provider: 'anthropic',
@@ -42,35 +32,6 @@ export const modelCatalog = [
 			'Pinned small Claude model for repeatable comparisons',
 		input: 1,
 		output: 5,
-	},
-	{
-		id: 'qwen3:1.7b',
-		provider: 'ollama',
-		name: 'Qwen3 1.7B',
-		tier: 'smallest',
-		performance:
-			'Tool-capable local model · speed depends on hardware',
-		input: null,
-		output: null,
-	},
-	{
-		id: 'qwen3:4b',
-		provider: 'ollama',
-		name: 'Qwen3 4B',
-		tier: 'small',
-		performance:
-			'Tool-capable local model · speed depends on hardware',
-		input: null,
-		output: null,
-	},
-	{
-		id: 'qwen3:8b',
-		provider: 'ollama',
-		name: 'Qwen3 8B',
-		tier: 'larger baseline',
-		performance: 'Tool-capable local model · requires more memory',
-		input: null,
-		output: null,
 	},
 	{
 		id: 'gpt-4o-mini',
@@ -115,5 +76,4 @@ export const pricingSources = {
 	openai: 'https://developers.openai.com/api/docs/pricing',
 	google: 'https://ai.google.dev/gemini-api/docs/pricing',
 	anthropic: 'https://platform.claude.com/docs/en/about-claude/pricing',
-	ollama: 'https://ollama.com/library/qwen3',
 };
