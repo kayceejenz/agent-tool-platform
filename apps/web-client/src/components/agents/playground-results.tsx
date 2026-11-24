@@ -2,7 +2,8 @@
 import type { useAgentPlayground } from './use-agent-playground';
 import { ReadableText } from '@/components/content/readable-text';
 import { Check, Copy } from 'lucide-react';
-import { RunMetrics } from './run-metrics';
+import { analysisAnswer } from '@/lib/agents/analysis-answer';
+import { RunAnswerEvaluation } from './run-answer-evaluation';
 import { ExecutionTrace } from './execution-trace';
 import { ExecutionArtifacts } from './execution-artifacts';
 
@@ -41,6 +42,7 @@ export function PlaygroundResults({
 	copyAnswer,
 	canRun,
 }: Props) {
+	const structuredAnswer = run.final_answer ? analysisAnswer(run.final_answer) : null;
 	return (
 		<section
 			className='playground-results'
@@ -123,7 +125,13 @@ export function PlaygroundResults({
 			</div>
 			{run.final_answer ? (
 				<div className='execution-answer' id={`execution-answer-${run.id}`}>
-					<ReadableText text={run.final_answer} />
+					<ReadableText text={structuredAnswer?.final_answer ?? run.final_answer} />
+					{structuredAnswer && (
+						<details>
+							<summary>Structured evaluation response</summary>
+							<pre>{JSON.stringify({ answers: structuredAnswer.answers }, null, 2)}</pre>
+						</details>
+					)}
 				</div>
 			) : pending ? (
 				<div className='playground-working' role='status'>
@@ -167,7 +175,7 @@ export function PlaygroundResults({
 				/>
 			)}
 
-            {!pending && <RunMetrics key={run.id} path={`${base}/executions/${run.id}`} canEdit={canRun} />}
+            {!pending && <RunAnswerEvaluation key={run.id} path={`${base}/executions/${run.id}`} />}
 			<details
 				className='playground-details'
 				open={showDetails}

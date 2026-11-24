@@ -5,11 +5,12 @@ from urllib.parse import quote
 from uuid import UUID
 
 from api.dependencies import Agents, Config, Executions, RunMetrics, User
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Query, Response, Request
 from integrations.agents.model_provider import SUPPORTED_PROVIDERS, provider_key
 from integrations.sandbox.artifacts import ArtifactStorage
 
 from modules.agents.models.error_model import AgentError
+from modules.analysis_evaluations.dtos.suite_dto import StartBatch, Suite, Case
 from modules.evaluations.dtos.run_metrics_dto import SaveExpectedSteps
 from modules.executions.dtos.execution_dto import StartExecution
 
@@ -21,6 +22,7 @@ async def start(
     project_id: UUID,
     agent_id: UUID,
     body: StartExecution,
+    request: Request,
     user: User,
     executions: Executions,
     agents: Agents,
@@ -39,6 +41,32 @@ async def start(
             "anthropic": "AGENT_ANTHROPIC_API_KEY",
         }[provider]
         raise AgentError(503, f"Set {variable} on the server to run this agent")
+    if body.answer_reference is not None:
+        batches = request.app.state.analysis_evaluations
+        batch = await batches.create(
+            user.id,
+            project_id,
+            agent_id,
+            StartBatch(
+                request_id=body.request_id,
+                revision=body.revision,
+                dataset_id=body.analysis.dataset_id,
+                attempts=1,
+                suite=Suite(
+                    name="Playground answer evaluation",
+                    cases=[
+                        Case(
+                            id="RUN",
+                            question=body.input,
+                            **body.answer_reference.model_dump(),
+                        )
+                    ],
+                ),
+            ),
+        )
+        detail = await batches.get(user.id, project_id, agent_id, batch["id"])
+        attempt = detail["attempts"][0]
+        return {"id": attempt["execution_id"], "status": attempt["execution_status"]}
     result = await executions.start(user.id, project_id, agent_id, body)
     return {"id": result["id"], "status": result["status"]}
 
@@ -174,3 +202,12 @@ async def save_metrics(
     metrics: RunMetrics,
 ):
     return await metrics.save(user.id, project_id, execution_id, body)
+
+
+@router.get("/executions/{execution_id}/answer-evaluation")
+async def answer_evaluation(
+    project_id: UUID, execution_id: UUID, user: User, request: Request
+):
+    return await request.app.state.analysis_evaluations.for_execution(
+        user.id, project_id, execution_id
+    )

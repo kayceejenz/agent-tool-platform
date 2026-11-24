@@ -34,6 +34,7 @@ const backend = createServer(async (request, response) => {
     if (path.endsWith(`/agents/${agentId}`)) return send(agent);
     if (path.endsWith(`/agents/${agentId}/executions`)) return send({ items: [run], next_offset: null });
     if (path.endsWith(`/executions/${runId}`)) return send(run);
+    if (path.endsWith('/answer-evaluation')) return send({ evaluation: null });
     if (path.endsWith('/artifacts')) return send({ items: [], warnings: [], expires_at: now });
     if (path.endsWith('/evaluations')) { judgeRequests++; return send({ items: [], next_offset: null }); }
     if (path.endsWith('/metrics')) {
@@ -59,42 +60,12 @@ test.beforeEach(async ({ context }) => {
     await context.addCookies([{ name: 'agent_access_token', value: 'fixture', url: origin, httpOnly: true }]);
 });
 
-test('dataset run defines expected steps, shows calculated metrics and retains them on refresh', async ({ page }) => {
-    await page.goto(`/projects/${projectId}/agents/${agentId}/playground?execution=${runId}`);
-    const evaluation = page.getByRole('region', { name: 'Run evaluation' });
-    await expect(evaluation).toContainText('Save expected steps');
-    await expect(page.locator('.evaluation-panel')).toHaveCount(0);
-    await evaluation.getByRole('button', { name: 'Define expected steps' }).click();
-    await expect(evaluation.getByRole('button', { name: 'Save expected steps' })).toBeDisabled();
-    await evaluation.getByLabel('Step 1 expected arguments').fill('[]');
-    await evaluation.getByRole('checkbox').check();
-    await evaluation.getByRole('button', { name: 'Save expected steps' }).click();
-    await expect(evaluation.getByRole('alert')).toContainText('JSON object');
-    expect(writes).toBe(0);
-    await evaluation.getByLabel('Step 1 expected arguments').fill('{}');
-    await evaluation.getByRole('button', { name: 'Add step' }).click();
-    await evaluation.getByLabel('Step 2 tool').selectOption('workspace_execute_python');
-    await evaluation.getByLabel('Step 2 expected arguments').fill('print(42)');
-    await evaluation.getByRole('button', { name: 'Save expected steps' }).click();
-    await expect(evaluation.getByRole('definition')).toHaveText(['66.7%', '100.0%', '50.0%', '1.25 s']);
-    expect(writes).toBe(1);
-    await evaluation.getByRole('button', { name: 'About argument accuracy' }).focus();
-    await expect(evaluation.getByRole('tooltip')).toContainText('Python code is compared as text');
-    await page.reload();
-    await expect(evaluation.getByRole('definition')).toHaveText(['66.7%', '100.0%', '50.0%', '1.25 s']);
-    expect(judgeRequests).toBe(0);
-    await page.setViewportSize({ width: 390, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: 'test-results/run-metrics-mobile.png', fullPage: true });
-});
-
 test('viewer can read scores and agent settings hide all LLM judge controls', async ({ page }) => {
     role = 'viewer';
     reference = [{ ...tools[0], arguments: {} }];
     await page.goto(`/projects/${projectId}/agents/${agentId}/playground?execution=${runId}`);
-    const evaluation = page.getByRole('region', { name: 'Run evaluation' });
-    await expect(evaluation).toContainText('66.7%');
-    await expect(evaluation.getByRole('button', { name: /expected steps/ })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Run evaluation' })).toHaveCount(0);
+    await expect(page.getByText('Define expected steps', { exact: true })).toHaveCount(0);
     expect(writes).toBe(0);
     await page.goto(`/projects/${projectId}/agents/${agentId}`);
     await expect(page.getByRole('heading', { name: 'Dataset analyst', exact: true })).toBeVisible();

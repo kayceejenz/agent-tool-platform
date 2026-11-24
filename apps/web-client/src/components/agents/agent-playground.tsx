@@ -1,5 +1,7 @@
 'use client';
 import { History, Plus, X } from 'lucide-react';
+import { useState } from 'react';
+import { AnalysisEvaluation } from './analysis-evaluation';
 import styles from './agent-playground.module.css';
 import type { AgentSummary } from '@/types/agent';
 import { useAgentPlayground } from '@/components/agents/use-agent-playground';
@@ -20,7 +22,10 @@ export function AgentPlayground({
 	onClose: () => void;
 	pageMode?: boolean;
 }) {
+	const [evaluating, setEvaluating] = useState(false);
 	const {
+		referenceJSON,
+		updateReferenceJSON,
 		datasetId,
 		updateDataset,
 		updateInput,
@@ -66,40 +71,44 @@ export function AgentPlayground({
 					</p>
 				</div>
 				<div className='playground-header-actions'>
-					<button
-						className='button playground-secondary'
-						disabled={busy}
-						aria-pressed={
-							view === 'history'
-						}
-						onClick={() =>
-							setView(
-								view ===
-									'history'
-									? 'run'
-									: 'history',
-							)
-						}>
-						<History
-							size={16}
-							aria-hidden='true'
-						/>
-						History
-					</button>
-					{run && (
+					<button className='button playground-secondary' aria-pressed={!evaluating} onClick={() => setEvaluating(false)}>Run</button>
+					<button className='button playground-secondary' aria-pressed={evaluating} onClick={() => setEvaluating(true)}>Evaluate</button>
+					{!evaluating && <>
 						<button
 							className='button playground-secondary'
-							disabled={
-								busy || pending
+							disabled={busy}
+							aria-pressed={
+								view === 'history'
 							}
-							onClick={newTask}>
-							<Plus
+							onClick={() =>
+								setView(
+									view ===
+										'history'
+										? 'run'
+										: 'history',
+								)
+							}>
+							<History
 								size={16}
 								aria-hidden='true'
 							/>
-							New task
+							History
 						</button>
-					)}
+						{run && (
+							<button
+								className='button playground-secondary'
+								disabled={
+									busy || pending
+								}
+								onClick={newTask}>
+								<Plus
+									size={16}
+									aria-hidden='true'
+								/>
+								New task
+							</button>
+						)}
+					</>}
 				</div>
 				<button
 					className='playground-close'
@@ -135,7 +144,7 @@ export function AgentPlayground({
 						Reconnect execution
 					</button>
 				)}
-				{view === 'history' ? (
+				{evaluating ? <AnalysisEvaluation projectId={projectId} agentId={agent.id} revision={agent.revision} enabled={agent.enabled} canRun={canRun} /> : view === 'history' ? (
 					<PlaygroundHistory
 						busy={busy}
 						run={run}
@@ -148,6 +157,8 @@ export function AgentPlayground({
 					/>
 				) : !run ? (
 					<PlaygroundComposer
+						referenceJSON={referenceJSON}
+						updateReferenceJSON={updateReferenceJSON}
 						datasetId={datasetId}
 						updateDataset={updateDataset}
 						projectId={projectId}

@@ -11,6 +11,7 @@ import type {
 } from '@/types/execution';
 import { useModalDialog } from '@/hooks/use-modal-dialog';
 import { projectWrite } from '@/lib/projects/client';
+import { answerReference } from '@/lib/agents/answer-reference';
 
 export function useAgentPlayground({
 	projectId,
@@ -23,6 +24,7 @@ export function useAgentPlayground({
 }) {
 	const dialog = useModalDialog(!pageMode);
 	const [datasetId, setDatasetId] = useState('');
+	const [referenceJSON, setReferenceJSON] = useState('');
 	const [input, setInput] = useState(''),
 		[error, setError] = useState(''),
 		[busy, setBusy] = useState(false);
@@ -139,11 +141,15 @@ export function useAgentPlayground({
 		const id = requestId ?? crypto.randomUUID();
 		setRequestId(id);
 		try {
+			if (!datasetId) throw new Error('Select a dataset before running analysis.');
+			const reference = answerReference(referenceJSON);
+			if (reference && !datasetId) throw new Error('Select a dataset to evaluate this answer.');
 			const value = await projectWrite<{ id: string }>(
 				`${base}/agents/${agent.id}/executions`,
 				'POST',
 				{
 					input,
+					...(reference ? { answer_reference: reference } : {}),
 					llm_evaluation: false,
 					revision: agent.revision,
 					request_id: id,
@@ -230,12 +236,17 @@ export function useAgentPlayground({
 		setView('run');
 		setRun(null);
 		setInput('');
+		setReferenceJSON('');
 		setError('');
 		setRequestId(null);
 		setShowDetails(false);
 		setExpandedTask(false);
 		setCopied(false);
 		requestAnimationFrame(() => taskInput.current?.focus());
+	}
+	function updateReferenceJSON(value: string) {
+		setReferenceJSON(value);
+		setRequestId(null);
 	}
 	function updateDataset(value: string) {
 		setDatasetId(value);
@@ -252,6 +263,7 @@ export function useAgentPlayground({
 		if (!run || pending || busy) return;
 		selectExecutionUrl(null);
 		setInput(run.input);
+		setReferenceJSON('');
 		setRun(null);
 		setRequestId(null);
 		setError('');
@@ -259,6 +271,8 @@ export function useAgentPlayground({
 	}
 
 	return {
+		referenceJSON,
+		updateReferenceJSON,
 		datasetId,
 		updateDataset,
 		updateInput,

@@ -49,7 +49,7 @@ export async function executionRoute(
 					? 'Agent or dataset not found in this project, or access removed.'
 					: 'Execution not found or access removed.',
 				409: 'Enable the current agent revision and its tools, or wait for pending runs to finish.',
-				422: 'Check the task and select a supported model configuration.',
+				422: 'Check the task, model configuration and expected-answer JSON.',
 				503: analysisRequested
 					? 'Analysis is unavailable. Check Docker, the built sandbox image and model provider credentials, then retry.'
 					: 'Executions are temporarily unavailable. Please try again.',

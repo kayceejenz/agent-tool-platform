@@ -8,6 +8,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from integrations.object_storage import StorageUnavailable
+from modules.analysis_evaluations.controllers.batch_controller import (
+    router as analysis_evaluations_router,
+)
 from modules.agents.controllers.agent_controller import router as agents_router
 from modules.agents.models.error_model import AgentError
 from modules.auth.controllers.auth_controller import router as auth_router
@@ -55,9 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             await database.close()
 
-    instance = FastAPI(
-        title="Agent Tool Platform", version="0.1.0", lifespan=lifespan
-    )
+    instance = FastAPI(title="Agent Tool Platform", version="0.1.0", lifespan=lifespan)
 
     config = settings if settings is not None else Settings()
     instance.add_middleware(
@@ -82,6 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     instance.include_router(prompts_router, prefix="/api/v1")
     instance.include_router(benchmarks_router, prefix="/api/v1")
     instance.include_router(agents_router, prefix="/api/v1")
+    instance.include_router(analysis_evaluations_router, prefix="/api/v1")
     instance.include_router(executions_router, prefix="/api/v1")
     instance.include_router(evaluations_router, prefix="/api/v1")
 

@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from integrations.agents.model_provider import configured_secrets
 from integrations.database import Database
 from integrations.mcp.credential_cipher import CredentialCipher
+from modules.analysis_evaluations.repos.batch_repo import AnalysisEvaluationRepository
 from modules.agents.repos.agent_repo import AgentRepository
 from modules.auth.helpers.passwords import Argon2idPasswordHasher
 from modules.auth.helpers.tokens import JwtAccessTokenIssuer
@@ -71,6 +72,9 @@ async def configure_dependencies(instance: FastAPI, config: Settings) -> Databas
     instance.state.agents = AgentRepository(database)
     instance.state.executions = ExecutionRepository(
         database, configured_secrets(config), settings=config
+    )
+    instance.state.analysis_evaluations = AnalysisEvaluationRepository(
+        database, instance.state.executions
     )
     instance.state.evaluations = EvaluationRepository(
         database, configured_secrets(config)

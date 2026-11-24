@@ -108,6 +108,32 @@ export function assertProjectPayload(
 	const positive = (v: unknown) => Number.isInteger(v) && Number(v) > 0;
 	const text = (v: unknown) => typeof v === 'string' && v.length > 0;
 
+	const toolSelection = (v: unknown) => v === undefined || v === null || (isRecord(v) && typeof v.accuracy === 'number' && Number.isFinite(v.accuracy) && v.accuracy >= 0 && v.accuracy <= 100 && ['required', 'used', 'matched', 'missing', 'unexpected'].every(k => Array.isArray(v[k]) && (v[k] as unknown[]).every(text)));
+
+	if (route.endsWith('/answer-evaluation')) {
+		if (value.evaluation === null) return;
+		const e = value.evaluation;
+		if (!isRecord(e) || !['pending', 'scored'].includes(String(e.state)) || !isRecord(e.expected) || !isRecord(e.summary) || !(e.result === null || (isRecord(e.result) && typeof e.result.success === 'boolean' && isRecord(e.result.fields) && toolSelection(e.result.tool_selection)))) return invalid();
+		return;
+	}
+
+	if (route.includes('/analysis-evaluations')) {
+		const statuses = ['running', 'cancelling', 'completed', 'cancelled'];
+		if (method === 'POST') { if (!text(value.id)) return invalid(); return; }
+		if (/\/analysis-evaluations$/.test(route)) {
+			if (!Array.isArray(value.items) || !value.items.every(item => isRecord(item) && text(item.id) && text(item.name) && statuses.includes(String(item.status))) || !(value.next_offset === null || (Number.isSafeInteger(value.next_offset) && Number(value.next_offset) >= 0))) return invalid();
+			return;
+		}
+		const score = (v: unknown) => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 100);
+		const duration = (v: unknown) => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0);
+		if (!text(value.id) || !text(value.name) || !statuses.includes(String(value.status)) || !isRecord(value.dataset) || !text(value.dataset.name) || !isRecord(value.suite) || !Array.isArray(value.suite.cases) || !value.suite.cases.every(c => isRecord(c) && text(c.id) && text(c.question) && isRecord(c.expected)) || !Array.isArray(value.attempts) || !isRecord(value.summary)) return invalid();
+		if (!['answer_correctness', 'task_success_rate'].every(k => score(value.summary && (value.summary as Record<string, unknown>)[k])) || !['median_latency_ms', 'p95_latency_ms'].every(k => duration((value.summary as Record<string, unknown>)[k])) || !(value.summary.pass_k === null || (isRecord(value.summary.pass_k) && Object.values(value.summary.pass_k).every(score)))) return invalid();
+		for (const a of value.attempts) {
+			if (!isRecord(a) || !text(a.id) || !text(a.case_id) || !positive(a.attempt) || !duration(a.latency_ms) || !(a.result === null || (isRecord(a.result) && typeof a.result.success === 'boolean' && isRecord(a.result.fields) && toolSelection(a.result.tool_selection) && (a.result.parsed === null || (isRecord(a.result.parsed) && typeof a.result.parsed.final_answer === 'string' && isRecord(a.result.parsed.answers)))))) return invalid();
+		}
+		return;
+	}
+
 	if (route.endsWith('/usage')) {
 		const totals = (entry: unknown) =>
 			isRecord(entry) &&

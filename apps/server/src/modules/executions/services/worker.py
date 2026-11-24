@@ -11,6 +11,7 @@ from integrations.database import Database
 from integrations.mcp.credential_cipher import CredentialCipher
 from integrations.queue_notifications import QueueNotifications, wait_for_work
 
+from modules.analysis_evaluations.repos.batch_repo import AnalysisEvaluationRepository
 from modules.agents.models.error_model import AgentError
 from modules.evaluations.repos.evaluation_repo import EvaluationRepository
 from modules.evaluations.services.evaluation_service import Evaluator
@@ -62,6 +63,7 @@ async def serve():
         settings,
     )
     runtime = LangChainRuntime(repository, executor, settings)
+    batches = AnalysisEvaluationRepository(database, repository)
     await database.open()
     logger.info("Database connected")
     evaluation_task = None
@@ -84,6 +86,7 @@ async def serve():
                     await evaluation_task
                 if notifications.task.done():
                     await notifications.task
+                await batches.advance()
                 run = await repository.claim()
                 if run:
                     logger.info("Run %s picked up", run["id"])

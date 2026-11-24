@@ -47,6 +47,6 @@ test('create and enable a dataset agent with no custom prompts or MCP tools', as
 		.click();
 	await expect(page).toHaveURL(/\/playground$/);
 	await expect(
-		page.getByRole('combobox', { name: 'Dataset Optional' }),
+		page.getByRole('combobox', { name: 'Dataset' }),
 	).toBeVisible();
 });

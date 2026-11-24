@@ -29,18 +29,14 @@ export function WorkspaceBreadcrumbs() {
 				href: `${base}/${section}`,
 			});
 		if (section === 'agents' && parts[3]) {
-			crumbs.push({
-				label:
-					parts[3] === 'new'
-						? 'Create agent'
-						: 'Configuration',
-				href: `${base}/agents/${parts[3]}`,
-			});
-			if (parts[4] === 'playground')
+			if (parts[4] === 'playground') {
+				crumbs.push({ label: 'Playground', href: pathname });
+			} else {
 				crumbs.push({
-					label: 'Playground',
-					href: pathname,
+					label: parts[3] === 'new' ? 'Create agent' : 'Configuration',
+					href: `${base}/agents/${parts[3]}`,
 				});
+			}
 		}
 		if (section === 'benchmarks' && parts[3]) {
 			crumbs.push({

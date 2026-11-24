@@ -38,7 +38,7 @@ export function AnalysisDatasetPicker({
 			})
 			.catch(() => {
 				if (active)
-					setError('Unable to load datasets. Retry or run without a dataset.');
+					setError('Unable to load datasets. Please retry.');
 			})
 			.finally(() => {
 				if (active) setLoading(false);
@@ -48,6 +48,9 @@ export function AnalysisDatasetPicker({
 			controller.abort();
 		};
 	}, [projectId, generation]);
+	useEffect(() => {
+		if (!value && datasets.length) onChange(datasets[0].id);
+	}, [value, datasets, onChange]);
 	async function loadMore() {
 		setLoadingMore(true);
 		setError('');
@@ -66,20 +69,18 @@ export function AnalysisDatasetPicker({
 	return (
 		<div className={styles.picker}>
 			<label htmlFor='analysis-dataset'>
-				Dataset <span>Optional</span>
+				Dataset
 			</label>
 			<div className={styles.controls}>
 				<select
 					id='analysis-dataset'
 					value={value}
-					disabled={disabled || loading}
+					disabled={disabled || loading || !datasets.length}
 					onChange={event => onChange(event.target.value)}
 				>
-					<option value=''>
-						{loading
-							? 'Loading datasets…'
-							: 'No dataset — use configured tools'}
-					</option>
+					{!datasets.length && !value && (
+						<option value='' disabled>{loading ? 'Loading datasets…' : 'No datasets available'}</option>
+					)}
 					{value && !datasets.some(dataset => dataset.id === value) && (
 						<option value={value}>Previously selected dataset</option>
 					)}
@@ -94,7 +95,6 @@ export function AnalysisDatasetPicker({
 			{value && (
 				<p>
 					Enables file inspection and isolated Python analysis for this run.
-					Evaluation is disabled.
 				</p>
 			)}
 			{!loading && !datasets.length && !error && (

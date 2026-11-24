@@ -1,3 +1,4 @@
+import { answerReference } from '../../src/lib/agents/answer-reference';
 import { visibleConfiguration } from '../../src/lib/agents/visible-configuration';
 import { test, expect } from '@playwright/test';
 import {
@@ -207,4 +208,11 @@ test('judge settings stay out of visible configuration without modifying source 
     const visible = visibleConfiguration(source);
     expect(visible).toEqual({ model: source.model, tools: source.tools });
     expect(source.evaluation_profile.enabled).toBe(true);
+});
+
+test('answer reference accepts answers and required tools while retaining legacy answer maps', async () => {
+	expect(answerReference('{"answers":{"rows":42},"required_tools":["read_file","execute_python"]}')).toEqual({ expected: { rows: 42 }, comparison: { rows: { type: 'exact' } }, required_tools: ['read_file', 'execute_python'] });
+	expect(answerReference('{"rows":42}')).toEqual({ expected: { rows: 42 }, comparison: { rows: { type: 'exact' } } });
+	expect(() => answerReference('{"answers":{"rows":42},"required_tools":["invented"]}')).toThrow('required_tools');
+	expect(() => answerReference('{"rows":42,"required_tools":["read_file"]}')).toThrow('inside answers');
 });

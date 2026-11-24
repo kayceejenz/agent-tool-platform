@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 // UI and transport regression checks with a loopback mock API; no database or models.
 export default defineConfig({
 	testDir: './tests/request-body',
-	testMatch: ['run-metrics.spec.ts', 'transport.spec.ts'],
+	testMatch: ['run-metrics.spec.ts', 'analysis-evaluation.spec.ts', 'transport.spec.ts'],
 	workers: 1,
 	use: { baseURL: 'http://127.0.0.1:3102' },
 	webServer: {

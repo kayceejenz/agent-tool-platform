@@ -1,5 +1,6 @@
 import hashlib
 import json
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from core.serialization import json_value
@@ -27,7 +28,15 @@ class ExecutionRepository:
     def redact_for_storage(self, value):
         return redact(json_value(value), self.secret)
 
-    async def start(self, user_id, project_id, agent_id, body):
+    @asynccontextmanager
+    async def start_connection(self, connection):
+        if connection is not None:
+            yield connection
+        else:
+            async with self.database.connection() as conn:
+                yield conn
+
+    async def start(self, user_id, project_id, agent_id, body, connection=None):
         expectations = (
             body.expectations.model_dump(mode="json") if body.expectations else None
         )
@@ -45,7 +54,7 @@ class ExecutionRepository:
                 [digest_input, body.analysis.model_dump(mode="json")], sort_keys=True
             )
         digest = hashlib.sha256(digest_input.encode()).hexdigest()
-        async with self.database.connection() as conn:
+        async with self.start_connection(connection) as conn:
             async with conn.cursor(row_factory=dict_row) as db:
                 await AgentRepository.member(db, user_id, project_id, True)
                 old = await (
@@ -160,7 +169,11 @@ class ExecutionRepository:
                             "SELECT *"
                             if view == "full"
                             else "SELECT id,agent_revision,status,termination_reason,final_answer,created_at,finished_at,snapshot#>>'{analysis,dataset,id}' AS analysis_dataset_id"
-                            + (",input" if view == "summary" else "")
+                            + (
+                                ",COALESCE(snapshot#>>'{analysis_evaluation,question}',input) AS input"
+                                if view == "summary"
+                                else ""
+                            )
                         )
                         + " FROM agent_platform.agent_executions WHERE project_id=%s AND id=%s",
                         (project_id, execution_id),
@@ -228,7 +241,7 @@ class ExecutionRepository:
                 await AgentRepository.agent(db, project_id, agent_id)
                 rows = await (
                     await db.execute(
-                        "SELECT id,agent_revision,input,status,termination_reason,created_at,finished_at FROM agent_platform.agent_executions WHERE project_id=%s AND agent_id=%s ORDER BY created_at DESC,id DESC LIMIT 21 OFFSET %s",
+                        "SELECT id,agent_revision,COALESCE(snapshot#>>'{analysis_evaluation,question}',input) AS input,status,termination_reason,created_at,finished_at FROM agent_platform.agent_executions WHERE project_id=%s AND agent_id=%s ORDER BY created_at DESC,id DESC LIMIT 21 OFFSET %s",
                         (project_id, agent_id, offset),
                     )
                 ).fetchall()

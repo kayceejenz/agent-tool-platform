@@ -7,6 +7,8 @@ import type { AgentSummary } from '@/types/agent';
 
 type Props = Pick<
 	ReturnType<typeof useAgentPlayground>,
+	| 'referenceJSON'
+	| 'updateReferenceJSON'
 	| 'updateInput'
 	| 'input'
 	| 'busy'
@@ -17,6 +19,8 @@ type Props = Pick<
 > & { canRun: boolean; agent: AgentSummary; projectId: string };
 
 export function PlaygroundComposer({
+	referenceJSON,
+	updateReferenceJSON,
 	datasetId,
 	updateDataset,
 	updateInput,
@@ -55,7 +59,7 @@ export function PlaygroundComposer({
 						ref={taskInput}
 						value={input}
 						rows={5}
-						placeholder='Describe the outcome you need and any constraints…'
+						placeholder='For example: Count the records in the selected dataset.'
 						maxLength={16000}
 						disabled={busy || !canRun}
 						onChange={event => updateInput(event.target.value)}
@@ -66,16 +70,33 @@ export function PlaygroundComposer({
 								!e.nativeEvent.isComposing
 							) {
 								e.preventDefault();
-								if (!busy && canRun && agent.enabled && input.trim())
+								if (!busy && canRun && agent.enabled && datasetId && input.trim())
 									e.currentTarget.form?.requestSubmit();
 							}
 						}}
 					/>
+					<label className='tool-field'>
+						Expected answer JSON (optional)
+						<textarea
+							aria-label='Expected answer JSON'
+							rows={5}
+							value={referenceJSON}
+							disabled={busy || !canRun}
+							maxLength={40000}
+							spellCheck={false}
+							placeholder={JSON.stringify({ answers: { record_count: 100 }, required_tools: ['read_file', 'execute_python'] }, null, 2)}
+							onChange={event => updateReferenceJSON(event.target.value)}
+						/>
+						<small>
+							Enter the question above and paste only the expected answer here.
+						</small>
+					</label>
+
 					<div className='execution-actions'>
 						<span>Ctrl / ⌘ + Enter to run</span>
 						<button
 							className='button primary'
-							disabled={busy || !canRun || !agent.enabled || !input.trim()}
+							disabled={busy || !canRun || !agent.enabled || !datasetId || !input.trim()}
 						>
 							{busy ? 'Starting…' : 'Run task'}
 							<ArrowUp size={16} aria-hidden='true' />
