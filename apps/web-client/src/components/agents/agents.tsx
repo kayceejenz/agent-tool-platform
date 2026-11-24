@@ -185,9 +185,6 @@ function AgentList({
 										Revision
 									</th>
 									<th scope='col'>
-										Tools
-									</th>
-									<th scope='col'>
 										Availability
 									</th>
 									<th scope='col'>
@@ -230,11 +227,6 @@ function AgentList({
 												v
 												{
 													agent.revision
-												}
-											</td>
-											<td data-label="Tools">
-												{
-													agent.tool_count
 												}
 											</td>
 											<td data-label="Availability">

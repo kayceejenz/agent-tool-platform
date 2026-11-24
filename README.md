@@ -4,7 +4,6 @@ A platform for analysing CSV datasets with language-model agents, running genera
 
 Users upload a dataset, configure an agent, ask a question and inspect the answer alongside its code, tool calls and generated files. MCP connections and manual tool benchmarks are optional extensions.
 
-- [Web application](https://agent.kayceejenz.dev)
 - [Backend API documentation](https://api.agent.kayceejenz.dev/docs)
 
 ## Main workflow
