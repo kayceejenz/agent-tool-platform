@@ -12,11 +12,13 @@ export function AnalysisDatasetPicker({
 	value,
 	onChange,
 	disabled,
+	showHint = true,
 }: {
 	projectId: string;
 	value: string;
 	onChange: (value: string) => void;
 	disabled: boolean;
+	showHint?: boolean;
 }) {
 	const [datasets, setDatasets] = useState<Dataset[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -92,7 +94,7 @@ export function AnalysisDatasetPicker({
 				</select>
 				<Link href={`/projects/${projectId}/datasets`}>Manage datasets</Link>
 			</div>
-			{value && (
+			{value && showHint && (
 				<p>
 					Enables file inspection and isolated Python analysis for this run.
 				</p>

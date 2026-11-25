@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from modules.analysis_evaluations.dtos.suite_dto import Suite
+from modules.analysis_evaluations.dtos.suite_dto import StartBatch, Suite
 from modules.analysis_evaluations.helpers.scoring import (
     execution_prompt,
     parse_answer,
@@ -173,3 +173,25 @@ def test_required_tools_reject_unsupported_duplicates_and_empty_lists():
                     "required_tools": tools,
                 }
             )
+
+
+@pytest.mark.parametrize("attempts", [1, 2, 3, 5, 10, 100])
+def test_custom_attempt_count(attempts):
+    value = StartBatch.model_validate({
+        "request_id": "11111111-1111-4111-8111-111111111111",
+        "dataset_id": "22222222-2222-4222-8222-222222222222",
+        "revision": 1, "attempts": attempts,
+        "suite": {"name": "Test", "cases": [case()]},
+    })
+    assert value.attempts == attempts
+
+
+@pytest.mark.parametrize("attempts", [0, -1, 101, 1.5, True, "3"])
+def test_invalid_attempt_count(attempts):
+    with pytest.raises(ValidationError):
+        StartBatch.model_validate({
+            "request_id": "11111111-1111-4111-8111-111111111111",
+            "dataset_id": "22222222-2222-4222-8222-222222222222",
+            "revision": 1, "attempts": attempts,
+            "suite": {"name": "Test", "cases": [case()]},
+        })

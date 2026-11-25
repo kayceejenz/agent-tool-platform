@@ -71,7 +71,7 @@ export function AgentPlayground({
 					</p>
 				</div>
 				<div className='playground-header-actions'>
-					<button className='button playground-secondary' aria-pressed={!evaluating} onClick={() => setEvaluating(false)}>Run</button>
+					<button className='button playground-secondary' aria-pressed={!evaluating} onClick={() => setEvaluating(false)}>Inspect</button>
 					<button className='button playground-secondary' aria-pressed={evaluating} onClick={() => setEvaluating(true)}>Evaluate</button>
 					{!evaluating && <>
 						<button

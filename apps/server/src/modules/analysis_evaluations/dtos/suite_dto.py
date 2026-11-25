@@ -79,5 +79,5 @@ class StartBatch(BaseModel):
     request_id: UUID
     revision: int = Field(ge=1, strict=True)
     dataset_id: UUID
-    attempts: Literal[1, 5] = 1
+    attempts: int = Field(default=1, ge=1, le=100, strict=True)
     suite: Suite

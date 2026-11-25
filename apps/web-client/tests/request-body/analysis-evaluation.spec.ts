@@ -9,7 +9,7 @@ const datasetId = '44444444-4444-4444-8444-444444444444';
 const batchId = '55555555-5555-4555-8555-555555555555';
 const now = '2026-11-24T12:00:00Z';
 const suite = { name: 'Pig trial test', cases: [{ id: 'PIG-001', question: 'Count rows', expected: { event_count: 42 }, comparison: { event_count: { type: 'exact' } } }] };
-let created = false, role = 'owner', malformed = false, posts = 0, singleRun = false;
+let created = false, role = 'owner', malformed = false, posts = 0, singleRun = false, requestedAttempts = 0;
 const agent = { id: agentId, name: 'Dataset analyst', description: '', revision: 1, current_revision: 1, enabled: true, tool_count: 0,
 	model_settings: { provider: 'openai', model: 'fixture', temperature: null }, created_at: now,
 	system_prompt: null, agent_prompt: null, evaluation_prompt: null, evaluation_profile: { enabled: false, prompt: null, model: null },
@@ -48,7 +48,7 @@ const backend = createServer(async (request, response) => {
 	if (path.endsWith('/analysis-evaluations') && request.method === 'POST') {
 		let body = ''; for await (const chunk of request) body += chunk;
 		const payload = JSON.parse(body); expect(payload.suite).toEqual(suite); expect(payload.dataset_id).toBe(datasetId);
-		posts++; created = true; return send({ id: batchId }, 202);
+		requestedAttempts = payload.attempts; posts++; created = true; return send({ id: batchId }, 202);
 	}
 	if (path.endsWith('/analysis-evaluations')) return send({ items: created ? [{ id: batchId, name: suite.name, status: 'completed' }] : [], next_offset: null });
 	if (path.endsWith('/analysis-evaluations/'+batchId)) return send(batch());
@@ -63,23 +63,36 @@ test.beforeEach(async ({ context }) => { created = false; role = 'owner'; malfor
 
 test('upload suite, evaluate, inspect readable answer and retain results after refresh', async ({ page }) => {
 	await page.goto(`/projects/${projectId}/agents/${agentId}/playground`);
+	await expect(page.getByRole('button', { name: 'Inspect', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Evaluate', exact: true }).click();
 	const panel = page.getByRole('region', { name: 'Dataset evaluation', exact: true });
 	await panel.getByLabel('Dataset', { exact: true }).selectOption(datasetId);
 	await panel.getByLabel('Test suite JSON').setInputFiles({ name: 'suite.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(suite)) });
-	await expect(panel).toContainText('1 questions × 1 attempts = 1 executions');
+	await expect(panel).toContainText('1 question · 1 attempt');
 	await panel.getByRole('button', { name: 'Run evaluation', exact: true }).click();
-	await expect(panel).toContainText('1/1 attempts scored');
-	await panel.getByRole('button', { name: 'PIG-001', exact: true }).click();
+	await expect(panel).toContainText('1 of 1 attempts scored');
+	await panel.getByRole('button', { name: 'Inspect PIG-001 attempt 1', exact: true }).click();
 	const details = panel.getByRole('region', { name: 'Evaluation attempt details' });
 	await expect(details).toContainText('The dataset contains 42 rows.');
-	await expect(panel.getByRole('definition')).toHaveText(['100.0%', '100.0%', '100.0%', '1.20 s', '1.20 s']);
+	await expect(details.getByRole('definition')).toHaveText(['100.0%', '100%', '1.20 s']);
+	await expect(panel.getByLabel('Test suite JSON')).toHaveCount(0);
+	await expect(panel.getByLabel('Saved evaluations')).toHaveCount(0);
+	await expect(details.getByRole('heading', { name: 'PIG-001', exact: true })).toBeFocused();
+	await page.screenshot({ path: 'test-results/evaluation-inspect-desktop.png', fullPage: true });
+	await details.getByRole('button', { name: 'All results', exact: true }).click();
+	await expect(panel.getByRole('button', { name: 'Inspect PIG-001 attempt 1', exact: true })).toBeFocused();
+	await expect(panel.getByLabel('Evaluation summary').getByRole('definition')).toHaveText(['100.0%', '100.0%', '100.0%', '1.20 s', '1.20 s']);
 	expect(posts).toBe(1);
 	await page.reload(); await page.getByRole('button', { name: 'Evaluate', exact: true }).click();
-	await expect(panel).toContainText('1/1 attempts scored');
+	await expect(panel).toContainText('1 of 1 attempts scored');
 	await page.setViewportSize({ width: 390, height: 844 });
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 	await page.screenshot({ path: 'test-results/analysis-evaluation-mobile.png', fullPage: true });
+	await panel.getByRole('button', { name: 'Inspect PIG-001 attempt 1', exact: true }).click();
+	await expect(details).toContainText('The dataset contains 42 rows.');
+	await expect(details.getByRole('button', { name: 'Previous attempt' })).toBeDisabled();
+	await expect(details.getByRole('button', { name: 'Next attempt' })).toBeDisabled();
+	await page.screenshot({ path: 'test-results/evaluation-inspect-mobile.png', fullPage: true });
 });
 
 test('malformed responses remain readable and viewers cannot start evaluations', async ({ page }) => {
@@ -88,7 +101,7 @@ test('malformed responses remain readable and viewers cannot start evaluations',
 	await page.getByRole('button', { name: 'Evaluate', exact: true }).click();
 	const panel = page.getByRole('region', { name: 'Dataset evaluation', exact: true });
 	await expect(panel.getByRole('button', { name: 'Run evaluation', exact: true })).toHaveCount(0);
-	await panel.getByRole('button', { name: 'PIG-001', exact: true }).click();
+	await panel.getByRole('button', { name: 'Inspect PIG-001 attempt 1', exact: true }).click();
 	await expect(panel).toContainText('Invalid evaluation format');
 	await expect(panel.getByRole('region', { name: 'Evaluation attempt details' })).toContainText('My unstructured answer is 42 rows.');
 	expect(posts).toBe(0);
@@ -114,4 +127,23 @@ test('Run accepts pasted answer JSON without a question and hides legacy tool sc
 	await page.reload();
 	await expect(evaluation).toContainText('100.0%');
 	await page.screenshot({ path: 'test-results/run-answer-evaluation.png', fullPage: true });
+});
+
+
+test('accept custom attempts and reject invalid numeric values', async ({ page }) => {
+    await page.goto(`/projects/${projectId}/agents/${agentId}/playground`);
+    await page.getByRole('button', { name: 'Evaluate', exact: true }).click();
+    const panel = page.getByRole('region', { name: 'Dataset evaluation', exact: true });
+    await panel.getByLabel('Test suite JSON').setInputFiles({ name: 'suite.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(suite)) });
+    const input = panel.getByRole('spinbutton', { name: 'Attempts per question' });
+    for (const value of ['', '0', '1.5', '101']) {
+        await input.fill(value);
+        await panel.getByRole('button', { name: 'Run evaluation', exact: true }).click();
+        expect(posts).toBe(0);
+    }
+    await input.fill('3');
+    await expect(panel).toContainText('1 question · 3 attempts');
+    await panel.getByRole('button', { name: 'Run evaluation', exact: true }).click();
+    await expect(panel).toContainText('1 of 1 attempts scored');
+    expect(requestedAttempts).toBe(3);
 });

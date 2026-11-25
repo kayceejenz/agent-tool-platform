@@ -11,7 +11,7 @@ Users upload a dataset, configure an agent, ask a question and inspect the answe
 1. Create an account using a valid invitation code and open a project.
 2. Upload CSV files in **Datasets**. Inspect their headers and sample records in the file tree.
 3. Create an agent and choose a model. Custom prompts and MCP tools are optional.
-4. Open **Playground → Run**. The first available dataset is selected by default.
+4. Open **Playground → Inspect**. The first available dataset is selected by default.
 5. Enter a question and, optionally, paste expected-answer JSON for that run.
 6. Inspect the readable final answer, structured answer fields, execution trace and downloadable outputs.
 7. Use **Evaluate** to run a saved question suite with one or five attempts per question.
